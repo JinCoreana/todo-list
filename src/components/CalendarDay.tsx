@@ -1,8 +1,10 @@
 import styled from '@emotion/styled';
-import React from 'reacti'
+import React from 'react'
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { todoFormModalOpenState } from '../features/TodoFormModal/atom';
-import { selectedDateState } from '../features/TodoList/atom';
+import TodoList from '../features/TodoList';
+import { filteredTodoListState, selectedDateState } from '../features/TodoList/atom';
+import { todoStatisticsModalOpenState } from '../features/TodoStatisticsModal/atom';
 import { isSameDay } from './utils'
 
 interface Props {
@@ -10,8 +12,10 @@ interface Props {
 }
 
 
+const Container = styled.div``;
+
 const TableData = styled.td`
-  column-count: 7;
+
   border: 0.2px solid #5e5e5e;
   text-align: center;
   color: #C9C8CC;
@@ -35,16 +39,41 @@ const DisplayDate = styled.div<{ isToday?: boolean; isSelected?: boolean; }>`
   height: 50px;
   cursor: pointer;
 `;
-const CalendarDay: React.FC<Props> = (date: Date) => {
+const CalendarDay: React.FC<Props> = ({ date }) => {
     const today = new Date()
     const selectedDate = useRecoilValue(selectedDateState)
-    const setTodoFormModalProps = useSetRecoilState(todoFormModalOpenState)
+    const todoList = useRecoilValue(filteredTodoListState(date))
+    const setSelectedDate = useSetRecoilState(selectedDateState)
+    const setTodoFormModalOpen = useSetRecoilState(todoFormModalOpenState)
+    const setTodoStatisticsModalOpen = useSetRecoilState(todoStatisticsModalOpenState)
 
-    const handleTodoFormModalOpen = (d: number) => setSelectedData(new Date(selectedDate.setDate(d)))
-    const
+    const handleTodoFormModalOpen = (d: number) => {
+        setSelectedDate(new Date(selectedDate.setDate(d)))
+        setTodoFormModalOpen(true)
+    }
+
+    const handleDateSelect = (d: number) => {
+        setSelectedDate(new Date(selectedDate.setDate(d)))
+    }
+    const handleTodoStatisticModalOpen = (event: React.SyntheticEvent<HTMLDivElement>) => {
+        event.stopPropagation();
+        setTodoStatisticsModalOpen(true)
+    }
     return (
-        <TableData key={d} onClick={() => selectedDate(thisDay)}>
-            )
+        <TableData key={`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`}
+            align="center" onDoubleClick={() => handleTodoFormModalOpen(date.getDate())}>
+            <Container>
+                <DisplayDate
+                    isSelected={isSameDay(selectedDate, date)}
+                    isToday={isSameDay(today, date)}
+                    onClick={() => handleDateSelect(date.getDate())}
+                    onDoubleClick={handleTodoStatisticModalOpen}>
+                    {date.getDate()}
+                </DisplayDate>
+                <TodoList items={todoList} />
+            </Container>
+        </TableData>
+    )
 }
 
-            export default CalendarDay;
+export default CalendarDay;

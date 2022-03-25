@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import styled from '@emotion/styled/macro';
 import Modal from '../../components/Modal';
 import { useRecoilCallback, useRecoilState, useRecoilValue } from 'recoil';
 import { selectedDateState, todoListState } from '../TodoList/atom';
 import { todoFormModalOpenState } from './atom';
-import { v4 as uuid4 } from 'uuid';
+import { v4 as uuids4 } from 'uuid';
 import { getSimpleDateFormat } from '../../components/utils';
 
 const ModalBody = styled.div`
@@ -39,6 +39,7 @@ ${Date} + ${InputTodo} {
 
 
 const TodoFormModal: React.FC = () => {
+    const inputRef = useRef<HTMLInputElement | null>(null);
     const [todo, setTodo] = useState<string>('');
     const selectedDate = useRecoilValue(selectedDateState)
     const todoList = useRecoilValue(todoListState);
@@ -46,30 +47,40 @@ const TodoFormModal: React.FC = () => {
     const [isOpen, setIsOpen] = useRecoilState(todoFormModalOpenState)
     const handleClose = () => setIsOpen(false)
 
+    const reset = () => {
+        setTodo('');
+        inputRef.current?.focus()
+    }
+
     const addTodo = useRecoilCallback(({ snapshot, set }) => () => {
         const todoList = snapshot.getLoadable(todoListState).getValue()
-        const newTodo = { id: uuid4(), content: 'todo', done: false, date: selectedDate }
+        const newTodo = { id: uuids4(), content: todo, done: false, date: selectedDate }
         set(todoListState, [...todoList, newTodo])
     }, [todo, selectedDate, todoList])
 
+
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        addTodo()
-        setTodo('')
-        handleClose()
+        if (e.key === 'Enter') {
+            addTodo();
+            reset();
+            handleClose();
+        }
     }
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTodo(e.target.value)
     }
+
     return (
         <Modal isOpen={isOpen} onClose={handleClose}>
             <ModalBody>
                 <Card>
                     <Date>{getSimpleDateFormat(selectedDate)} </Date>
-                    <InputTodo placeholder="Add new event" onKeyPress={handleKeyPress} value={todo} onChange={handleChange} />
+                    <InputTodo ref={inputRef} placeholder="Add new event" onKeyPress={handleKeyPress} value={todo} onChange={handleChange} />
                 </Card>
             </ModalBody>
         </Modal>
     )
 }
+
 
 export default TodoFormModal;

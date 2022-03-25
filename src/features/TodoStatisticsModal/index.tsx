@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from '@emotion/styled/macro';
 import { ImBin } from 'react-icons/im'
 import Modal from '../../components/Modal';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { todoStatisticsModalOpenState, todoStatisticsState } from './atom';
 import { filteredTodoListState, selectedDateState, todoListState } from '../TodoList/atom';
+
 
 const ModalBody = styled.div`
 width: 100vw;
@@ -67,6 +68,9 @@ const TodoStatisticsModal: React.FC = () => {
 
 
     const handleClose = () => setIsOpen(false)
+    const removeTodo = (id: string) => {
+        setTodoList(todoList.filter(todo => todo.id !== id))
+    }
 
     return (
         <Modal isOpen={isOpen} onClose={handleClose}>

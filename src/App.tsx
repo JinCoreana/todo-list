@@ -1,38 +1,35 @@
 import React from 'react';
-import { atom, selector, useRecoilValue } from 'recoil'
-import axios from 'axios';
+import { Global, css } from '@emotion/react';
+import styled from '@emotion/styled/macro';
+import { RecoilRoot } from 'recoil';
+
 import Calendar from './components/Calendar';
+import TodoStatisticsModal from './features/TodoStatisticsModal';
+import TodoFormModal from './features/TodoFormModal';
 
-
-const todoIdState = atom({
-  key: 'todoIdState',
-  default: 1
-})
-
-const todoItemQuery = selector({
-  key: 'todoItemQuery',
-  get: async ({ get }) => {
-    const id = get(todoIdState);
-
-
-    const res = await axios.get(`https://jsonplaceholder.typicode.com/todos/${id}`)
-    return res.data;
-
-
+const globalStyle = css`
+  html, body {
+    background-color: #19181A;
+    margin: 0;
+    font-family: sans-serif, serif, "Apple SD Gothic Neo";
   }
-})
-function App() {
+`;
 
-  const data = useRecoilValue(todoItemQuery)
-  return (
-    <div >
-      {data.title}
-      {data.userId}
-      {data.completed}
-
+const Container = styled.div`
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+`;
+const App: React.FC = () => (
+  <RecoilRoot>
+    <Global styles={globalStyle} />
+    <Container>
       <Calendar />
-    </div >
-  );
-}
+    </Container>
+    <TodoFormModal />
+    <TodoStatisticsModal />
+  </RecoilRoot>
+)
+
 
 export default App;

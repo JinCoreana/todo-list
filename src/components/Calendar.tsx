@@ -1,10 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import styled from '@emotion/styled/macro';
 import { BiChevronLeft, BiChevronRight } from 'react-icons/bi';
-import { isSameDay } from './utils';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { selectedDateState, todoListState } from '../features/TodoList/atom';
-import { todoStatisticsModalOpenState } from '../features/TodoStatisticsModal/atom';
+import { useRecoilCallback, useRecoilValue, useSetRecoilState } from 'recoil';
+import { selectedDateState, selectedTodoState, todoListState } from '../features/TodoList/atom';
+import CalendarDay from './CalendarDay';
 
 const Header = styled.div`
   width: 100%;
@@ -41,8 +40,9 @@ const ButtonContainer = styled.div`
 
 const Table = styled.table`
   border-collapse: collapse;
-  width: 95%;
+width: 100%;
   height: 90%;
+  border-spacing: 0;
 
 `;
 
@@ -60,10 +60,16 @@ const TableHeader = styled.thead`
 `;
 
 const TableBody = styled.tbody`
-font-size: 20px;`;
+  > tr {
+    > td {
+      width: 128px;
+      height: 128px;
+      box-sizing: border-box;
+    }
+  }`;
 
 const TableData = styled.td`
-  column-count: 7;
+
   border: 0.2px solid #5e5e5e;
   text-align: center;
   color: #C9C8CC;
@@ -73,23 +79,21 @@ const TableData = styled.td`
 
 `;
 
-const DisplayDate = styled.div<{ isToday?: boolean; isSelected?: boolean; }>`
-  color: ${({ isToday }) => isToday && '#F8F7FA'};
-  background-color: ${({ isToday, isSelected }) => isSelected ? '#0055a5' : isToday ? '#313133' : ''};
-  display: flex;
-  justify-content: center;
-  border-radius: 50%;
-  align-self: center;
-  align-items: center;
-  position: absolute;
-  top: 1px;
-  width: 50px;
-  height: 50px;
-  cursor: pointer;
-`;
 
 const Base = styled.div`
-  width: 100%;
+min-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 16px;
+  padding: 24px;
+  height: 100vh;
+  box-sizing: border-box;
+  background-color: #28272A;
+  ${Header} + ${Table} {
+    margin-top: 36px;
+  
+  /* width: 100%;
   height: 100vh;
   padding: 24px 12px;
   display: flex;
@@ -98,7 +102,7 @@ const Base = styled.div`
   box-sizing: border-box;
   background-color: #28272A;
   ${Header} + ${Table} {
-    margin-top: 40px;
+    margin-top: 40px; */
   };`;
 
 const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -107,16 +111,10 @@ const MONTHS = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"
 ];
 
-setSelectedDate(new Date)
 const Calendar: React.FC = () => {
   const selectedDate = useRecoilValue(selectedDateState)
   const todoList = useRecoilValue(todoListState)
   const setSelectedDate = useSetRecoilState(selectedDateState)
-  const setTodoFormModalOpen = useSetRecoilState(todoStatisticsModalOpenState)
-  const handleTodoFormModalOpen = (d: number) => {
-    setSelectedDate(new Date(selectedDate, setDate(d)))
-    setTodoFormModalOpen(true)
-  }
   const { year, month, firstDay, lastDay } = useMemo(() => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
@@ -129,15 +127,18 @@ const Calendar: React.FC = () => {
     })
   }, [selectedDate]);
 
+  const selectDate = (date: Date) => {
+    setSelectedDate(date);
+  }
 
   const pad = () => [...Array(firstDay.getDay()).keys()].map((p: number) => <TableData key={`pad_${p}`} />);
 
   const range = () => [...Array(lastDay.getDate()).keys()].map((d: number) => {
     const thisDay = new Date(year, month, d + 1);
-    const today = new Date();
+
 
     return (
-      <CalendarDay />
+      <CalendarDay key={d} date={thisDay} />
     )
   });
 
@@ -153,6 +154,22 @@ const Calendar: React.FC = () => {
     ));
   }
 
+  const removeTodo = useRecoilCallback(({ snapshot, set }) => () => {
+    const todoList = snapshot.getLoadable(todoListState).getValue();
+    const selectedTodo = snapshot.getLoadable(selectedTodoState).getValue();
+
+    set(todoListState, todoList.filter(todo => todo.id !== selectedTodo?.id));
+  }, [selectedDate, todoList])
+
+  useEffect(() => {
+    const onBackspaceKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Backspace') {
+        removeTodo()
+      }
+    }
+
+    window.addEventListener('keydown', onBackspaceKeyDown)
+  }, [removeTodo])
   return (
     <Base>
       <Header>
